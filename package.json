@@ -28,7 +28,7 @@
     "pino": "^8.19.0",
     "pino-pretty": "^10.3.1",
     "reflect-metadata": "^0.2.1",
-    "rpc-with-types": "https://github.com/hashelq/rpc-ts#92ca8dc3a05f8a0201015f871c01def7e11cd060",
+    "rpc-with-types": "https://github.com/hashelq/rpc-ts#0b6d9a5ed626a1f0c31951c82d9ef7cf01beb13a",
     "sequelize": "^6.37.1",
     "sequelize-typescript": "^2.1.6",
     "sqlite3": "^5.1.7",

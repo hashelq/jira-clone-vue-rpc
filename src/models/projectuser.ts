@@ -6,9 +6,9 @@ import User from "./user.js";
 export default class ProjectUser extends Model {
   @ForeignKey(() => Project)
   @Column
-  projectId: number;
+  declare projectId: number;
 
   @ForeignKey(() => User)
   @Column
-  userId: number;
+  declare userId: number;
 }

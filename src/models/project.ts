@@ -15,7 +15,7 @@ export default class Project extends Model {
   @ForeignKey(() => User)
   declare ownerId: number;
 
-  @BelongsTo(() => User)
+  @BelongsTo(() => User, { as: "owner" })
   owner: ReturnType<() => User>;
 
   @BelongsToMany(() => User, () => ProjectUser)

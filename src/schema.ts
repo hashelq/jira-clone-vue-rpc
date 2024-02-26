@@ -16,6 +16,24 @@ export function validate<X>(schema: SchemaDefinition, obj: X) {
   if (errors.length) throw new CatchValidationError(errors);
 }
 
+export function validateProjectForm(obj: { title: string, description: string }) {
+  validate(
+    {
+      title: {
+        type: String,
+        required: true,
+        length: { min: 3, max: 64 },
+      },
+      description: {
+        type: String,
+        required: true,
+        length: { min: 4, max: 1024 },
+      },
+    },
+    obj,
+  );
+}
+
 export function validateUserForm(obj: { username: string; password: string }) {
   validate(
     {
@@ -32,6 +50,10 @@ export function validateUserForm(obj: { username: string; password: string }) {
     },
     obj,
   );
+}
+
+function optional<X extends t.Mixed>(x: X) {
+  return t.union([x, t.undefined]);
 }
 
 export const User = t.type({
@@ -57,16 +79,17 @@ export const Category = t.type({
 export const Project = t.type({
   title: t.string,
   description: t.string,
-  owner: User,
+  owner: optional(User),
 
   // Members who have access
-  members: t.array(User),
+  members: optional(t.array(User)),
 
   // Users who ever had/have access
-  users: t.record(t.number, User),
+  users: optional(t.record(t.number, User)),
 
-  categories: t.array(Category),
+  categories: optional(t.array(Category)),
 });
+
 
 function result<X extends t.Mixed>(x: X) {
   return t.union([x, t.string]);
@@ -98,11 +121,27 @@ export default {
     authorize: Method.new("user.authorize", t.string, result(t.undefined)),
 
     info: Method.new("user.infoGet", t.void, result(User)),
+  },
 
-    projectsGet: Method.new(
+  projects: {
+    getList: Method.new(
       "user.projects.get",
       t.void,
-      result(t.array(Project)),
+      result(
+        t.type({
+          projects: t.array(Project),
+          ownedProjects: t.array(Project),
+        }),
+      ),
+    ),
+
+    create: Method.new(
+      "user.projects.create",
+      t.type({
+        title: t.string,
+        description: t.string,
+      }),
+      result(Project),
     ),
   },
 

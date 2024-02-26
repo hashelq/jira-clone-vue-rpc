@@ -10,11 +10,11 @@ export default class User extends Model {
   @Column
   declare password: string;
 
-  @HasMany(() => Project)
-  ownedProjects: Project[];
+  @HasMany(() => Project, { as: "ownedProjects" })
+  declare ownedProjects: Project[];
 
   @BelongsToMany(() => Project, () => ProjectUser)
-  projects: Project[];
+  declare projects: Project[];
 
   @Column
   declare token: string;
