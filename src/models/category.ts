@@ -8,12 +8,12 @@ export default class Category extends Model {
   declare title: string;
 
   @BelongsTo(() => Project)
-  project: ReturnType<() => Project>;
+  declare project: ReturnType<() => Project>;
 
   @Column
   @ForeignKey(() => Project)
   declare projectId: number;
 
-  @HasMany(() => Task)
-  tasks: Task[];
+  @HasMany(() => Task, { as: "tasks" })
+  declare tasks: ReturnType<() => Task[]>;
 }

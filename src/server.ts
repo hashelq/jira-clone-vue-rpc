@@ -16,6 +16,7 @@ import Schema, {
   CatchValidationError,
   ModelNotFoundError,
   validateNewCategoryForm,
+  validateNewTaskForm,
   validateProjectForm,
   validateUserForm,
 } from "./schema.js";
@@ -36,7 +37,11 @@ const convertTask = (x: Task) => {
 };
 
 const convertCategory = (x: Category) => {
-  return { id: x.id, title: x.title, tasks: x.tasks ? x.tasks.map(convertTask) : [] };
+  return {
+    id: x.id,
+    title: x.title,
+    tasks: x.tasks ? x.tasks.map(convertTask) : [],
+  };
 };
 
 export default class RPCInterface {
@@ -104,6 +109,23 @@ export default class RPCInterface {
     if (!user) throw new AuthorizationError();
 
     return user;
+  }
+
+  private async getCategory(
+    userId: number,
+    categoryId: number,
+    args?: FindOptions<any>,
+  ): Promise<Category> {
+    const category = await Category.findOne({
+      where: {
+        id: categoryId,
+      },
+      ...args,
+    });
+
+    if (!category) throw new AccessDeniedError();
+    await this.guardHserHasAccessToProject(userId, category.projectId);
+    return category;
   }
 
   private implementMethods() {
@@ -223,11 +245,39 @@ export default class RPCInterface {
 
       const categories = await Category.findAll({
         where: {
-          projectId: projectId
-        }
+          projectId: projectId,
+        },
       });
 
       return categories.map(convertCategory);
+    });
+
+    onMethod(Schema.task.getList, async ({ categoryId }, { session }) => {
+      return (
+        (
+          await this.getCategory(
+            (await this.getUserById(session.userId)).id,
+            categoryId,
+            { include: { as: "tasks", model: Task } },
+          )
+        ).tasks ?? []
+      ).map(convertTask);
+    });
+
+    onMethod(Schema.task.create, async (newTaskForm, { session }) => {
+      validateNewTaskForm(newTaskForm);
+      return convertTask(
+        await Task.create({
+          categoryId: (
+            await this.getCategory(
+              (await this.getUserById(session.userId)).id,
+              newTaskForm.categoryId,
+            )
+          ).id,
+          title: newTaskForm.task.title,
+          description: newTaskForm.task.description,
+        }),
+      );
     });
   }
 }

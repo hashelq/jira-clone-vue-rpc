@@ -76,6 +76,16 @@ async function projectEnvironment() {
   return { service, socket, project };
 }
 
+async function categoryEnvironment() {
+  const { service, socket, project } = await projectEnvironment();
+  const category = await new Schema.category.create({
+    projectId: project.id,
+    title: "Testing",
+  }).with(socket);
+  if (typeof category === "string") throw new Error(category);
+  return { service, socket, project, category };
+}
+
 describe("User interactions", () => {
   it("User register and get info", async () => {
     const { service, socket } = await serviceAndSocket();
@@ -124,12 +134,12 @@ describe("User interactions", () => {
     }
   });
 
-  it("Create category \"TEST\" and list it", async () => {
+  it('Create category "TEST" and list it', async () => {
     const { service, socket, project } = await projectEnvironment();
     try {
       const category = await new Schema.category.create({
         projectId: project.id,
-        title: "Testing"
+        title: "Testing",
       }).with(socket);
       if (typeof category === "string") throw new Error(category);
       expect(category.id).to.equal(1);
@@ -139,6 +149,30 @@ describe("User interactions", () => {
       }).with(socket);
       if (typeof categories === "string") throw new Error(categories);
       expect(categories[0].id).to.equal(category.id);
+    } finally {
+      socket.close();
+      service.rpc.server.close();
+    }
+  });
+
+  it("Tasks interactions", async () => {
+    const { service, socket, category } = await categoryEnvironment();
+    try {
+      const task = await new Schema.task.create({
+        categoryId: category.id,
+        task: {
+          title: "Hello world",
+          description: "Test",
+        },
+      }).with(socket);
+      if (typeof task === "string") throw new Error(task);
+      expect(task.id).to.equal(1);
+
+      const tasks = await new Schema.task.getList({
+        categoryId: category.id,
+      }).with(socket);
+      if (typeof tasks === "string") throw new Error(tasks);
+      expect(tasks[0].id).to.equal(task.id);
     } finally {
       socket.close();
       service.rpc.server.close();

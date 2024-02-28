@@ -17,12 +17,42 @@ export function validate<X>(schema: SchemaDefinition, obj: X) {
   if (errors.length) throw new CatchValidationError(errors);
 }
 
-export function validateNewCategoryForm(obj: { projectId: number, title: string }) {
+export function validateNewTaskForm(obj: {
+  categoryId: number;
+  task: { title: string; description: string; };
+}) {
+  validate(
+    {
+      categoryId: {
+        type: Number,
+        required: true,
+      },
+      task: {
+        title: {
+          type: String,
+          required: true,
+          length: { min: 4, max: 32 },
+        },
+        description: {
+          type: String,
+          required: true,
+          length: { min: 4, max: 1024 },
+        } 
+      },
+    },
+    obj,
+  );
+}
+
+export function validateNewCategoryForm(obj: {
+  projectId: number;
+  title: string;
+}) {
   validate(
     {
       projectId: {
         type: Number,
-        required: true
+        required: true,
       },
       title: {
         type: String,
@@ -34,7 +64,10 @@ export function validateNewCategoryForm(obj: { projectId: number, title: string 
   );
 }
 
-export function validateProjectForm(obj: { title: string, description: string }) {
+export function validateProjectForm(obj: {
+  title: string;
+  description: string;
+}) {
   validate(
     {
       title: {
@@ -80,21 +113,16 @@ export const User = t.type({
 });
 
 export const Task = t.type({
-  id: t.number,
+  id: optional(t.number),
   title: t.string,
   description: t.string,
-  status: t.union([
-    t.literal("active"),
-    t.literal("inactive"),
-    t.literal("done"),
-  ]),
-  associatedUsers: t.array(t.number),
+  associatedUsers: optional(t.array(t.number)),
 });
 
 export const Category = t.type({
   id: t.number,
   title: t.string,
-  tasks: t.array(Task),
+  tasks: optional(t.array(Task)),
 });
 
 export const Project = t.type({
@@ -111,7 +139,6 @@ export const Project = t.type({
 
   categories: optional(t.array(Category)),
 });
-
 
 function result<X extends t.Mixed>(x: X) {
   return t.union([x, t.string]);
@@ -171,19 +198,19 @@ export default {
     getList: Method.new(
       "category.getList",
       t.type({
-        projectId: t.number
+        projectId: t.number,
       }),
-      t.array(Category)
+      t.array(Category),
     ),
 
     create: Method.new(
       "category.create",
       t.type({
         projectId: t.number,
-        title: t.string
+        title: t.string,
       }),
-      Category
-    ), 
+      Category,
+    ),
   },
 
   task: {
@@ -199,7 +226,10 @@ export default {
       "task.create",
       t.type({
         categoryId: t.number,
-        task: Task,
+        task: t.type({
+          title: t.string,
+          description: t.string,
+        }),
       }),
       result(Task),
     ),
