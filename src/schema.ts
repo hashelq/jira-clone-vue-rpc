@@ -129,7 +129,7 @@ export default {
 
   projects: {
     getList: Method.new(
-      "user.projects.get",
+      "project.getList",
       t.void,
       result(
         t.type({
@@ -140,7 +140,7 @@ export default {
     ),
 
     create: Method.new(
-      "user.projects.create",
+      "project.create",
       t.type({
         title: t.string,
         description: t.string,
@@ -161,8 +161,8 @@ export default {
   },
 
   task: {
-    get: Method.new(
-      "category.tasksGet",
+    getList: Method.new(
+      "task.getList",
       t.type({
         categoryId: t.number,
       }),
@@ -170,7 +170,7 @@ export default {
     ),
 
     create: Method.new(
-      "category.tasksCreate",
+      "task.create",
       t.type({
         categoryId: t.number,
         task: Task,
