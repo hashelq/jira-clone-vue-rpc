@@ -9,7 +9,7 @@ import {
   Error as SequelizeError,
   ValidationError as SequelizeValidationError,
 } from "sequelize";
-import { Model, Sequelize, ValidationFailed } from "sequelize-typescript";
+import { Model, Sequelize } from "sequelize-typescript";
 import Schema, {
   AccessDeniedError,
   AuthorizationError,
@@ -79,14 +79,6 @@ export default class RPCInterface {
     });
 
     this.implementMethods();
-  }
-
-  private logCritical(error: string) {
-    this.logger.error({
-      type: "component-critical",
-      object: "rpc",
-      message: error,
-    });
   }
 
   private async guardHserHasAccessToProject(userId: number, projectId: number) {
