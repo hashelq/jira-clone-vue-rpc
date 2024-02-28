@@ -146,7 +146,18 @@ export default {
   },
 
   category: {
-    tasksGet: Method.new(
+    create: Method.new(
+      "category.create",
+      t.type({
+        projectId: t.number,
+        title: t.string
+      }),
+      Category
+    ), 
+  },
+
+  task: {
+    get: Method.new(
       "category.tasksGet",
       t.type({
         categoryId: t.number,
@@ -154,7 +165,7 @@ export default {
       result(t.array(Task)),
     ),
 
-    tasksCreate: Method.new(
+    create: Method.new(
       "category.tasksCreate",
       t.type({
         categoryId: t.number,
@@ -162,10 +173,8 @@ export default {
       }),
       result(Task),
     ),
-  },
 
-  task: {
-    taskEdit: Method.new(
+    edit: Method.new(
       "task.edit",
       t.type({
         taskId: t.number,
