@@ -217,6 +217,14 @@ export default {
       ),
     ),
 
+    delete: Method.new(
+      "project.delete",
+      t.type({
+        projectId: t.number
+      }),
+      result(t.undefined),
+    ),
+
     create: Method.new(
       "project.create",
       t.type({

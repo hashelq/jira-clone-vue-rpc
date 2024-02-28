@@ -103,7 +103,7 @@ describe("User interactions", () => {
     }
   });
 
-  it("Create project and list", async () => {
+  it("Project interactions", async () => {
     const { service, socket } = await userEnvironment();
     try {
       const projectName = "Test Project";
@@ -118,6 +118,15 @@ describe("User interactions", () => {
 
       expect(rlist.projects[0].title).to.equal(projectName);
       expect(rlist.ownedProjects[0].title).to.equal(projectName);
+
+      ok(
+        await new Schema.projects.delete({
+          projectId: rlist.projects[0].id,
+        }).with(socket),
+      );
+      const p = ok(await new Schema.projects.getList().with(socket));
+      expect(p.projects.length === 0);
+      expect(p.ownedProjects.length === 0);
     } finally {
       socket.close();
       service.rpc.server.close();
