@@ -16,11 +16,11 @@ export default class Project extends Model {
   declare ownerId: number;
 
   @BelongsTo(() => User, { as: "owner" })
-  owner: ReturnType<() => User>;
+  declare owner: ReturnType<() => User>;
 
   @BelongsToMany(() => User, () => ProjectUser)
-  members: ReturnType<() => User[]>;
+  declare members: ReturnType<() => User[]>;
 
   @HasMany(() => Category, { as: "categories" })
-  categories: ReturnType<() => Category[]>;
+  declare categories: ReturnType<() => Category[]>;
 }

@@ -6,9 +6,9 @@ import Task from "./task.js";
 export default class TaskUser extends Model {
   @ForeignKey(() => Task)
   @Column
-  taskId: number;
+  declare taskId: number;
 
   @ForeignKey(() => User)
   @Column
-  userId: number;
+  declare userId: number;
 }

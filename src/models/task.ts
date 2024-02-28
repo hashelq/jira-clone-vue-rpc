@@ -15,11 +15,11 @@ export default class Task extends Model {
   declare status: "active" | "inactive" | "done";
 
   @BelongsTo(() => Category)
-  category: ReturnType<() => Category>;
+  declare category: ReturnType<() => Category>;
 
   @ForeignKey(() => Category)
-  categoryId: number;
+  declare categoryId: number;
 
   @BelongsToMany(() => User, () => TaskUser)
-  associatedUsers: User[];
+  declare associatedUsers: User[];
 }
