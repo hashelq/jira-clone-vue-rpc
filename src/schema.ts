@@ -284,6 +284,14 @@ export default {
       result(t.undefined),
     ),
 
+    delete: Method.new(
+      "task.delete",
+      t.type({
+        taskId: t.number
+      }),
+      result(t.undefined),
+    ),
+
     edit: Method.new(
       "task.edit",
       t.type({

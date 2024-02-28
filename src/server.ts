@@ -128,7 +128,7 @@ export default class RPCInterface {
       },
       include: [
         { as: "category", model: Category },
-        ...(args.include instanceof Array ? args.include : []),
+        ...(args && args.include && args.include instanceof Array ? args.include : []),
       ],
     });
 
@@ -316,10 +316,12 @@ export default class RPCInterface {
       );
     });
 
+    onMethod(Schema.task.delete, async ({ taskId }, { session }) => {
+      await (await this.getTask(session.userId, taskId)).destroy();
+    });
+
     onMethod(Schema.task.move, async ({ taskId, categoryId }, { session }) => {
-      const task = await this.getTask(session.userId, taskId, {
-        include: [Category],
-      });
+      const task = await this.getTask(session.userId, taskId);
 
       if (
         task.category.projectId !==
