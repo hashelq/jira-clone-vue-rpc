@@ -57,10 +57,12 @@ function optional<X extends t.Mixed>(x: X) {
 }
 
 export const User = t.type({
+  id: t.number,
   username: t.string,
 });
 
 export const Task = t.type({
+  id: t.number,
   title: t.string,
   description: t.string,
   status: t.union([
@@ -72,11 +74,13 @@ export const Task = t.type({
 });
 
 export const Category = t.type({
+  id: t.number,
   title: t.string,
   tasks: t.array(Task),
 });
 
 export const Project = t.type({
+  id: t.number,
   title: t.string,
   description: t.string,
   owner: optional(User),

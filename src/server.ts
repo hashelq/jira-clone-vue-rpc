@@ -21,7 +21,7 @@ import ProjectUser from "./models/projectuser.js";
 type SessionType = { userId: number | undefined };
 
 const convertProject = (x: Project) => {
-  return { title: x.title, description: x.description };
+  return { id: x.id, title: x.title, description: x.description };
 };
 
 export default class RPCInterface {
@@ -132,7 +132,7 @@ export default class RPCInterface {
 
     onMethod(Schema.user.info, async (_, { session }) => {
       const user = await this.getUserById(session.userId);
-      return { username: user.username };
+      return { id: user.id, username: user.username };
     });
 
     onMethod(Schema.projects.getList, async (_, { session }) => {
