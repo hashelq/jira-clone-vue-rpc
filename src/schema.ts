@@ -17,9 +17,40 @@ export function validate<X>(schema: SchemaDefinition, obj: X) {
   if (errors.length) throw new CatchValidationError(errors);
 }
 
+export function validateEditTaskForm(obj: {
+  taskId: number;
+  task: { title: string; description: string; associatedUsers: number[]; };
+}) {
+  validate(
+    {
+      taskId: {
+        type: Number,
+        required: true,
+      },
+      task: {
+        title: {
+          type: String,
+          required: true,
+          length: { min: 4, max: 32 },
+        },
+        description: {
+          type: String,
+          required: true,
+          length: { min: 4, max: 1024 },
+        },
+        associatedUsers: {
+          type: Array,
+          required: true,
+        },
+      },
+    },
+    obj,
+  );
+}
+
 export function validateNewTaskForm(obj: {
   categoryId: number;
-  task: { title: string; description: string };
+  task: { title: string; description: string; };
 }) {
   validate(
     {
@@ -116,7 +147,7 @@ export const Task = t.type({
   id: optional(t.number),
   title: t.string,
   description: t.string,
-  associatedUsers: optional(t.array(t.number)),
+  associatedUsers: optional(t.array(User)),
 });
 
 export const Category = t.type({
@@ -234,11 +265,23 @@ export default {
       result(Task),
     ),
 
+    get: Method.new(
+      "task.get",
+      t.type({
+        taskId: t.number,
+      }),
+      result(Task),
+    ),
+
     edit: Method.new(
       "task.edit",
       t.type({
         taskId: t.number,
-        task: Task,
+        task: t.type({
+          title: t.string,
+          description: t.string,
+          associatedUsers: t.array(t.number)
+        }),
       }),
       result(Task),
     ),

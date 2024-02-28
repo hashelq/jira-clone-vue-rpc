@@ -5,6 +5,7 @@ import { WebSocketServer } from "ws";
 import {
   Attributes,
   FindOptions,
+  Op,
   Error as SequelizeError,
   ValidationError as SequelizeValidationError,
 } from "sequelize";
@@ -14,6 +15,7 @@ import Schema, {
   AuthorizationError,
   CatchValidationError,
   ModelNotFoundError,
+  validateEditTaskForm,
   validateNewCategoryForm,
   validateNewTaskForm,
   validateProjectForm,
@@ -24,15 +26,25 @@ import Project from "./models/project.js";
 import ProjectUser from "./models/projectuser.js";
 import Category from "./models/category.js";
 import Task from "./models/task.js";
+import TaskUser from "./models/taskuser.js";
 
 type SessionType = { userId: number | undefined };
+
+const convertUser = (x: User) => {
+  return { id: x.id, username: x.username };
+};
 
 const convertProject = (x: Project) => {
   return { id: x.id, title: x.title, description: x.description };
 };
 
 const convertTask = (x: Task) => {
-  return { id: x.id, title: x.title, description: x.description };
+  return {
+    id: x.id,
+    title: x.title,
+    description: x.description,
+    associatedUsers: (x.associatedUsers ?? []).map(convertUser),
+  };
 };
 
 const convertCategory = (x: Category) => {
@@ -101,6 +113,27 @@ export default class RPCInterface {
     if (!user) throw new AuthorizationError();
 
     return user;
+  }
+
+  private async getTask(
+    userId: number,
+    postId: number,
+    args?: FindOptions<any>,
+  ): Promise<Task> {
+    const task = await Task.findOne({
+      ...args,
+      where: {
+        id: postId,
+      },
+      include: [
+        { as: "category", model: Category },
+        ...(args.include instanceof Array ? args.include : []),
+      ],
+    });
+
+    if (!task) throw new AccessDeniedError();
+    await this.guardHserHasAccessToProject(userId, task.category.projectId);
+    return task;
   }
 
   private async getCategory(
@@ -252,7 +285,7 @@ export default class RPCInterface {
           await this.getCategory(
             (await this.getUserById(session.userId)).id,
             categoryId,
-            { include: { as: "tasks", model: Task } },
+            { include: [{ as: "tasks", model: Task }] },
           )
         ).tasks ?? []
       ).map(convertTask);
@@ -270,6 +303,75 @@ export default class RPCInterface {
           ).id,
           title: newTaskForm.task.title,
           description: newTaskForm.task.description,
+        }),
+      );
+    });
+
+    onMethod(Schema.task.get, async ({ taskId }, { session }) => {
+      return convertTask(
+        await this.getTask(session.userId, taskId, { include: [User] }),
+      );
+    });
+
+    onMethod(Schema.task.edit, async (form, { session }) => {
+      validateEditTaskForm(form);
+      const transaction = await this.seq.transaction();
+      const task = await this.getTask(session.userId, form.taskId, {
+        transaction,
+      });
+      task.title = form.task.title;
+      task.description = form.task.description;
+      await task.save({ transaction });
+
+      // get all from db and remove if they don't belong to the task
+      const taskUsers = await TaskUser.findAll({
+        where: { taskId: task.id },
+        transaction,
+      });
+
+      const usersExist = await User.findAll({
+        where: {
+          id: {
+            [Op.in]: form.task.associatedUsers,
+          },
+        },
+      });
+
+      const lset = new Set();
+      const rset = new Set();
+      const eset = new Set();
+      for (const user of usersExist) {
+        eset.add(user.id);
+      }
+      for (const userId of form.task.associatedUsers) {
+        if (eset.has(userId)) lset.add(userId);
+      }
+
+      for (const row of taskUsers) {
+        rset.add(row.userId);
+      }
+
+      await Promise.all(
+        taskUsers.filter((x) => {
+          if (!lset.has(x.userId)) return TaskUser.destroy();
+        }),
+      );
+
+      await Promise.all(
+        form.task.associatedUsers.filter((x) => {
+          if (!rset.has(x))
+            return TaskUser.create({
+              userId: x,
+              taskId: task.id,
+            });
+        }),
+      );
+
+      await transaction.commit();
+
+      return convertTask(
+        await this.getTask(session.userId, task.id, {
+          include: [User],
         }),
       );
     });

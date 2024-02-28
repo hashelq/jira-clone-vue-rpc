@@ -150,7 +150,7 @@ describe("User interactions", () => {
   it("Tasks interactions", async () => {
     const { service, socket, category } = await categoryEnvironment();
     try {
-      const task = ok(
+        let task = ok(
         await new Schema.task.create({
           categoryId: category.id,
           task: {
@@ -167,6 +167,22 @@ describe("User interactions", () => {
         }).with(socket),
       );
       expect(tasks[0].id).to.equal(task.id);
+
+      ok(await new Schema.task.edit({
+        taskId: task.id,
+        task: {
+          title: "blabla",
+          description: "test2",
+          associatedUsers: [1, 999]
+        }
+      }).with(socket));
+
+      task = ok(await new Schema.task.get({
+        taskId: task.id
+      }).with(socket));
+
+      expect(task.associatedUsers.length).to.equal(1);
+      expect(task.associatedUsers[0].id).to.equal(1);
     } finally {
       socket.close();
       service.rpc.server.close();

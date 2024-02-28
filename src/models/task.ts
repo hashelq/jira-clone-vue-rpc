@@ -18,10 +18,7 @@ export default class Task extends Model {
   @Column
   declare description: string;
 
-  @Column
-  declare status: "active" | "inactive" | "done";
-
-  @BelongsTo(() => Category)
+  @BelongsTo(() => Category, { as: "category" })
   declare category: ReturnType<() => Category>;
 
   @ForeignKey(() => Category)
