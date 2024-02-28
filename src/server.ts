@@ -9,12 +9,13 @@ import {
   Error as SequelizeError,
   ValidationError as SequelizeValidationError,
 } from "sequelize";
-import { Model, Sequelize } from "sequelize-typescript";
+import { Model, Sequelize, ValidationFailed } from "sequelize-typescript";
 import Schema, {
   AccessDeniedError,
   AuthorizationError,
   CatchValidationError,
   ModelNotFoundError,
+  WrongOperandsError,
   validateEditTaskForm,
   validateNewCategoryForm,
   validateNewTaskForm,
@@ -179,6 +180,8 @@ export default class RPCInterface {
           return await func(req, source);
         } catch (error) {
           console.error(error);
+          if (error instanceof WrongOperandsError)
+            return Schema.errorCodes.wrongOperands;
           if (error instanceof CatchValidationError)
             return Schema.errorCodes.validationError;
           if (error instanceof AccessDeniedError)
@@ -311,6 +314,21 @@ export default class RPCInterface {
       return convertTask(
         await this.getTask(session.userId, taskId, { include: [User] }),
       );
+    });
+
+    onMethod(Schema.task.move, async ({ taskId, categoryId }, { session }) => {
+      const task = await this.getTask(session.userId, taskId, {
+        include: [Category],
+      });
+
+      if (
+        task.category.projectId !==
+        (await this.getCategory(session.userId, categoryId)).projectId
+      )
+        throw new WrongOperandsError();
+
+      task.categoryId = categoryId;
+      await task.save();
     });
 
     onMethod(Schema.task.edit, async (form, { session }) => {

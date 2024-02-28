@@ -148,9 +148,9 @@ describe("User interactions", () => {
   });
 
   it("Tasks interactions", async () => {
-    const { service, socket, category } = await categoryEnvironment();
+    const { service, socket, project, category } = await categoryEnvironment();
     try {
-        let task = ok(
+      let task = ok(
         await new Schema.task.create({
           categoryId: category.id,
           task: {
@@ -161,28 +161,60 @@ describe("User interactions", () => {
       );
       expect(task.id).to.equal(1);
 
-      const tasks = ok(
+      let tasks = ok(
         await new Schema.task.getList({
           categoryId: category.id,
         }).with(socket),
       );
       expect(tasks[0].id).to.equal(task.id);
 
-      ok(await new Schema.task.edit({
-        taskId: task.id,
-        task: {
-          title: "blabla",
-          description: "test2",
-          associatedUsers: [1, 999]
-        }
-      }).with(socket));
+      ok(
+        await new Schema.task.edit({
+          taskId: task.id,
+          task: {
+            title: "blabla",
+            description: "test2",
+            associatedUsers: [1, 999],
+          },
+        }).with(socket),
+      );
 
-      task = ok(await new Schema.task.get({
-        taskId: task.id
-      }).with(socket));
+      task = ok(
+        await new Schema.task.get({
+          taskId: task.id,
+        }).with(socket),
+      );
 
       expect(task.associatedUsers.length).to.equal(1);
       expect(task.associatedUsers[0].id).to.equal(1);
+
+      // create second category
+      const ncat = ok(
+        await new Schema.category.create({
+          projectId: project.id,
+          title: "done",
+        }).with(socket),
+      );
+      ok(
+        await new Schema.task.move({
+          taskId: task.id,
+          categoryId: ncat.id,
+        }).with(socket),
+      );
+
+      tasks = ok(
+        await new Schema.task.getList({
+          categoryId: ncat.id,
+        }).with(socket),
+      );
+      expect(tasks.length).to.equal(1);
+
+      const tasks2 = ok(
+        await new Schema.task.getList({
+          categoryId: category.id,
+        }).with(socket),
+      );
+      expect(tasks2.length).to.equal(0);
     } finally {
       socket.close();
       service.rpc.server.close();

@@ -4,6 +4,7 @@ import Validate, { ValidationError, SchemaDefinition } from "validate";
 export class AuthorizationError {}
 export class ModelNotFoundError {}
 export class AccessDeniedError {}
+export class WrongOperandsError {}
 export class CatchValidationError {
   public errors: ValidationError[];
 
@@ -177,6 +178,7 @@ function result<X extends t.Mixed>(x: X) {
 
 export default {
   errorCodes: {
+    wrongOperands: "WRONG_OPERANDS_ERROR",
     internalError: "INTERNAL_ERROR",
     authorizationError: "AUTHORIZATION_ERROR",
     notFound: "NOT_FOUND",
@@ -271,6 +273,15 @@ export default {
         taskId: t.number,
       }),
       result(Task),
+    ),
+
+    move: Method.new(
+      "task.move",
+      t.type({
+        taskId: t.number,
+        categoryId: t.number
+      }),
+      result(t.undefined),
     ),
 
     edit: Method.new(
