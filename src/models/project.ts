@@ -1,4 +1,12 @@
-import { Column, Table, Model, BelongsTo, HasMany, ForeignKey, BelongsToMany } from "sequelize-typescript";
+import {
+  Column,
+  Table,
+  Model,
+  BelongsTo,
+  HasMany,
+  ForeignKey,
+  BelongsToMany,
+} from "sequelize-typescript";
 import User from "./user.js";
 import Category from "./category.js";
 import ProjectUser from "./projectuser.js";

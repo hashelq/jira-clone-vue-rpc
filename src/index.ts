@@ -1,5 +1,3 @@
-import { pino } from "pino";
-import RPCInterface from "./server.js";
 import Service from "./service.js";
 
 function envRequired(name: string) {
@@ -21,21 +19,28 @@ async function main() {
   (await import("dotenv")).config();
 
   // logger/sequelize
-  const logLevel = process.env["LOG_LEVEL"] ?? "info"; 
+  const logLevel = process.env["LOG_LEVEL"] ?? "info";
   const [dialect, database, username, password, host, rhost] = [
     "DB_DIALECT",
     "DB_NAME",
     "DB_USERNAME",
     "DB_PASSWORD",
     "DB_HOST",
-    "RPC_HOST"
+    "RPC_HOST",
   ].map(envRequired);
-  const [sport, rport] = ["DB_PORT", "RPC_PORT"].map(envINTRequired); 
+  const [sport, rport] = ["DB_PORT", "RPC_PORT"].map(envINTRequired);
 
   const service = await Service.create({
     rpcOptions: { host: rhost, port: rport },
-    sequelizeOptions: {dialect: dialect as any, database, username, password, host, port: sport},
-    logLevel
+    sequelizeOptions: {
+      dialect: dialect as any,
+      database,
+      username,
+      password,
+      host,
+      port: sport,
+    },
+    logLevel,
   });
 }
 

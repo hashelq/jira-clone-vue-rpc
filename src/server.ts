@@ -1,11 +1,10 @@
 import crypto from "crypto";
 import { Logger } from "pino";
-import { iots as t, Server, WebSocketServerImpl, Method } from "rpc-with-types";
+import { Server, WebSocketServerImpl, Method } from "rpc-with-types";
 import { WebSocketServer } from "ws";
 import {
   Attributes,
   FindOptions,
-  ModelStatic,
   Error as SequelizeError,
   ValidationError as SequelizeValidationError,
 } from "sequelize";
@@ -104,13 +103,6 @@ export default class RPCInterface {
     return user;
   }
 
-  private async getUser(token: string): Promise<User> {
-    const user = await User.findOne({ where: { token } });
-    if (!user) throw new AuthorizationError();
-
-    return user;
-  }
-
   private async getCategory(
     userId: number,
     categoryId: number,
@@ -181,13 +173,12 @@ export default class RPCInterface {
 
     onMethod(Schema.user.register, async (userform, { session }) => {
       validateUserForm(userform);
-      const token = crypto.randomBytes(32).toString("hex");
       const user = await User.create({
         ...userform,
-        token,
+        token: crypto.randomBytes(32).toString("hex"),
       });
       session.userId = user.id;
-      return { token };
+      return { token: user.token };
     });
 
     onMethod(Schema.user.info, async (_, { session }) => {
@@ -231,25 +222,28 @@ export default class RPCInterface {
         newCategoryForm.projectId,
       );
       if (project.ownerId != user.id) throw new AccessDeniedError();
-      const category = await Category.create({
-        projectId: project.id,
-        title: newCategoryForm.title,
-      });
 
-      return convertCategory(category);
+      return convertCategory(
+        await Category.create({
+          projectId: project.id,
+          title: newCategoryForm.title,
+        }),
+      );
     });
 
     onMethod(Schema.category.getList, async ({ projectId }, { session }) => {
-      const user = await this.getUserById(session.userId);
-      await this.guardHserHasAccessToProject(user.id, projectId);
+      await this.guardHserHasAccessToProject(
+        (await this.getUserById(session.userId)).id,
+        projectId,
+      );
 
-      const categories = await Category.findAll({
-        where: {
-          projectId: projectId,
-        },
-      });
-
-      return categories.map(convertCategory);
+      return (
+        await Category.findAll({
+          where: {
+            projectId: projectId,
+          },
+        })
+      ).map(convertCategory);
     });
 
     onMethod(Schema.task.getList, async ({ categoryId }, { session }) => {

@@ -1,4 +1,10 @@
-import { Table, Column, Model, HasMany, BelongsToMany } from "sequelize-typescript";
+import {
+  Table,
+  Column,
+  Model,
+  HasMany,
+  BelongsToMany,
+} from "sequelize-typescript";
 import Project from "./project.js";
 import ProjectUser from "./projectuser.js";
 

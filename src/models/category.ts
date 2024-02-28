@@ -1,4 +1,11 @@
-import { Column, Table, Model, BelongsTo, HasMany, ForeignKey } from "sequelize-typescript";
+import {
+  Column,
+  Table,
+  Model,
+  BelongsTo,
+  HasMany,
+  ForeignKey,
+} from "sequelize-typescript";
 import Project from "./project.js";
 import Task from "./task.js";
 

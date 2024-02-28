@@ -19,7 +19,7 @@ export function validate<X>(schema: SchemaDefinition, obj: X) {
 
 export function validateNewTaskForm(obj: {
   categoryId: number;
-  task: { title: string; description: string; };
+  task: { title: string; description: string };
 }) {
   validate(
     {
@@ -37,7 +37,7 @@ export function validateNewTaskForm(obj: {
           type: String,
           required: true,
           length: { min: 4, max: 1024 },
-        } 
+        },
       },
     },
     obj,

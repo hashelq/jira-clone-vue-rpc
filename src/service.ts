@@ -6,8 +6,8 @@ import createSequelize from "./seq.js";
 
 export interface ServiceConfig {
   rpcOptions: {
-    host: string,
-    port: number
+    host: string;
+    port: number;
   };
   sequelizeOptions: SequelizeOptions;
   logLevel: string;
@@ -58,7 +58,12 @@ export default class Service {
           : false,
     });
 
-    const rpci = new RPCInterface(config.rpcOptions.host, config.rpcOptions.port, logger, seq);
+    const rpci = new RPCInterface(
+      config.rpcOptions.host,
+      config.rpcOptions.port,
+      logger,
+      seq,
+    );
 
     return new Service(rpci, seq, logger);
   }

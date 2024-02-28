@@ -34,25 +34,16 @@ async function serviceAndSocket() {
       direction: "in",
       data: s,
     });
-  //socket.debugLoggerSend = (s) =>
-  //  service.logger.debug({
-  //    type: "rpc-raw",
-  //    object: "socket",
-  //    direction: "out",
-  //    data: s,
-  //  });
-  //socket.debugLoggerReceive = (s) =>
-  //  service.logger.debug({
-  //    type: "rpc-raw",
-  //    object: "socket",
-  //    direction: "in",
-  //    data: s,
-  //  });
   await socket.connect();
   return {
     service,
     socket,
   };
+}
+
+function ok<X>(x: string | X): X {
+  if (typeof x === "string") throw new Error(x);
+  return x;
 }
 
 async function userEnvironment() {
@@ -90,22 +81,21 @@ describe("User interactions", () => {
   it("User register and get info", async () => {
     const { service, socket } = await serviceAndSocket();
     try {
-      const response = await new Schema.user.register({
-        username: "hashelq",
-        password: "test",
-      }).with(socket);
-
-      if (typeof response === "string") throw new Error(response);
+      const response = ok(
+        await new Schema.user.register({
+          username: "hashelq",
+          password: "test",
+        }).with(socket),
+      );
 
       service.logger.info({
         type: "test",
         message: `token: ${response.token}`,
       });
-
       expect(response.token).to.not.equal(undefined);
 
-      const r = await new Schema.user.info().with(socket);
-      if (typeof r === "string") throw new Error(r);
+      const r = ok(await new Schema.user.info().with(socket));
+
       expect(r.username).to.equal("hashelq");
     } finally {
       socket.close();
@@ -117,14 +107,14 @@ describe("User interactions", () => {
     const { service, socket } = await userEnvironment();
     try {
       const projectName = "Test Project";
-      const rp = await new Schema.projects.create({
-        title: projectName,
-        description: "Project for testing",
-      }).with(socket);
-      if (typeof rp === "string") throw new Error(rp);
+      ok(
+        await new Schema.projects.create({
+          title: projectName,
+          description: "Project for testing",
+        }).with(socket),
+      );
 
-      const rlist = await new Schema.projects.getList().with(socket);
-      if (typeof rlist === "string") throw new Error(rlist);
+      const rlist = ok(await new Schema.projects.getList().with(socket));
 
       expect(rlist.projects[0].title).to.equal(projectName);
       expect(rlist.ownedProjects[0].title).to.equal(projectName);
@@ -137,17 +127,19 @@ describe("User interactions", () => {
   it('Create category "TEST" and list it', async () => {
     const { service, socket, project } = await projectEnvironment();
     try {
-      const category = await new Schema.category.create({
-        projectId: project.id,
-        title: "Testing",
-      }).with(socket);
-      if (typeof category === "string") throw new Error(category);
+      const category = ok(
+        await new Schema.category.create({
+          projectId: project.id,
+          title: "Testing",
+        }).with(socket),
+      );
       expect(category.id).to.equal(1);
 
-      const categories = await new Schema.category.getList({
-        projectId: project.id,
-      }).with(socket);
-      if (typeof categories === "string") throw new Error(categories);
+      const categories = ok(
+        await new Schema.category.getList({
+          projectId: project.id,
+        }).with(socket),
+      );
       expect(categories[0].id).to.equal(category.id);
     } finally {
       socket.close();
@@ -158,20 +150,22 @@ describe("User interactions", () => {
   it("Tasks interactions", async () => {
     const { service, socket, category } = await categoryEnvironment();
     try {
-      const task = await new Schema.task.create({
-        categoryId: category.id,
-        task: {
-          title: "Hello world",
-          description: "Test",
-        },
-      }).with(socket);
-      if (typeof task === "string") throw new Error(task);
+      const task = ok(
+        await new Schema.task.create({
+          categoryId: category.id,
+          task: {
+            title: "Hello world",
+            description: "Test",
+          },
+        }).with(socket),
+      );
       expect(task.id).to.equal(1);
 
-      const tasks = await new Schema.task.getList({
-        categoryId: category.id,
-      }).with(socket);
-      if (typeof tasks === "string") throw new Error(tasks);
+      const tasks = ok(
+        await new Schema.task.getList({
+          categoryId: category.id,
+        }).with(socket),
+      );
       expect(tasks[0].id).to.equal(task.id);
     } finally {
       socket.close();
