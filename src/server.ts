@@ -238,10 +238,7 @@ export default class RPCInterface {
     });
 
     onMethod(Schema.projects.delete, async ({ projectId }, { session }) => {
-      const project = await this.findById<Project>(
-        Project,
-        projectId,
-      );
+      const project = await this.findById<Project>(Project, projectId);
       if (project.ownerId != session.userId) throw new AccessDeniedError();
       await project.destroy();
     });

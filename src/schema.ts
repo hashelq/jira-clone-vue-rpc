@@ -20,7 +20,7 @@ export function validate<X>(schema: SchemaDefinition, obj: X) {
 
 export function validateEditTaskForm(obj: {
   taskId: number;
-  task: { title: string; description: string; associatedUsers: number[]; };
+  task: { title: string; description: string; associatedUsers: number[] };
 }) {
   validate(
     {
@@ -51,7 +51,7 @@ export function validateEditTaskForm(obj: {
 
 export function validateNewTaskForm(obj: {
   categoryId: number;
-  task: { title: string; description: string; };
+  task: { title: string; description: string };
 }) {
   validate(
     {
@@ -220,7 +220,7 @@ export default {
     delete: Method.new(
       "project.delete",
       t.type({
-        projectId: t.number
+        projectId: t.number,
       }),
       result(t.undefined),
     ),
@@ -256,7 +256,7 @@ export default {
     delete: Method.new(
       "category.delete",
       t.type({
-        categoryId: t.number
+        categoryId: t.number,
       }),
       result(t.undefined),
     ),
@@ -295,7 +295,7 @@ export default {
       "task.move",
       t.type({
         taskId: t.number,
-        categoryId: t.number
+        categoryId: t.number,
       }),
       result(t.undefined),
     ),
@@ -303,7 +303,7 @@ export default {
     delete: Method.new(
       "task.delete",
       t.type({
-        taskId: t.number
+        taskId: t.number,
       }),
       result(t.undefined),
     ),
@@ -315,7 +315,7 @@ export default {
         task: t.type({
           title: t.string,
           description: t.string,
-          associatedUsers: t.array(t.number)
+          associatedUsers: t.array(t.number),
         }),
       }),
       result(Task),
