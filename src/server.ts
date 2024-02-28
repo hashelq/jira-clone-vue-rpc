@@ -209,6 +209,7 @@ export default class RPCInterface {
       server.onMethod(method, newfunc);
     }
 
+    // USER
     onMethod(Schema.user.register, async (userform, { session }) => {
       validateUserForm(userform);
       const user = await User.create({
@@ -224,6 +225,7 @@ export default class RPCInterface {
       return { id: user.id, username: user.username };
     });
 
+    // PROJECT
     onMethod(Schema.projects.getList, async (_, { session }) => {
       const user = await this.getUserById(session.userId, {
         include: [
@@ -258,6 +260,7 @@ export default class RPCInterface {
       return convertProject(project);
     });
 
+    // CATEGORY
     onMethod(Schema.category.create, async (newCategoryForm, { session }) => {
       validateNewCategoryForm(newCategoryForm);
       const user = await this.getUserById(session.userId);
@@ -294,6 +297,7 @@ export default class RPCInterface {
       await (await this.getCategory(session.userId, categoryId)).destroy();
     });
 
+    // TASK
     onMethod(Schema.task.getList, async ({ categoryId }, { session }) => {
       return (
         (
