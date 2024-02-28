@@ -77,8 +77,8 @@ async function categoryEnvironment() {
   return { service, socket, project, category };
 }
 
-describe("User interactions", () => {
-  it("User register and get info", async () => {
+describe("General functionality tests", () => {
+  it("User interactions", async () => {
     const { service, socket } = await serviceAndSocket();
     try {
       const response = ok(
