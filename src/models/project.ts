@@ -21,6 +21,6 @@ export default class Project extends Model {
   @BelongsToMany(() => User, () => ProjectUser)
   members: ReturnType<() => User[]>;
 
-  @HasMany(() => Category)
+  @HasMany(() => Category, { as: "categories" })
   categories: ReturnType<() => Category[]>;
 }

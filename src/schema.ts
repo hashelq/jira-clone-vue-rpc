@@ -2,7 +2,8 @@ import { Method, iots as t } from "rpc-with-types";
 import Validate, { ValidationError, SchemaDefinition } from "validate";
 
 export class AuthorizationError {}
-
+export class ModelNotFoundError {}
+export class AccessDeniedError {}
 export class CatchValidationError {
   public errors: ValidationError[];
 
@@ -14,6 +15,23 @@ export class CatchValidationError {
 export function validate<X>(schema: SchemaDefinition, obj: X) {
   const errors = new (Validate as any)(schema).validate(obj);
   if (errors.length) throw new CatchValidationError(errors);
+}
+
+export function validateNewCategoryForm(obj: { projectId: number, title: string }) {
+  validate(
+    {
+      projectId: {
+        type: Number,
+        required: true
+      },
+      title: {
+        type: String,
+        required: true,
+        length: { min: 4, max: 32 },
+      },
+    },
+    obj,
+  );
 }
 
 export function validateProjectForm(obj: { title: string, description: string }) {
@@ -150,6 +168,14 @@ export default {
   },
 
   category: {
+    getList: Method.new(
+      "category.getList",
+      t.type({
+        projectId: t.number
+      }),
+      t.array(Category)
+    ),
+
     create: Method.new(
       "category.create",
       t.type({

@@ -3,25 +3,40 @@ import { Logger } from "pino";
 import { iots as t, Server, WebSocketServerImpl, Method } from "rpc-with-types";
 import { WebSocketServer } from "ws";
 import {
+  Attributes,
   FindOptions,
+  ModelStatic,
   Error as SequelizeError,
   ValidationError as SequelizeValidationError,
 } from "sequelize";
-import { Sequelize } from "sequelize-typescript";
+import { Model, Sequelize } from "sequelize-typescript";
 import Schema, {
+  AccessDeniedError,
   AuthorizationError,
   CatchValidationError,
+  ModelNotFoundError,
+  validateNewCategoryForm,
   validateProjectForm,
   validateUserForm,
 } from "./schema.js";
 import User from "./models/user.js";
 import Project from "./models/project.js";
 import ProjectUser from "./models/projectuser.js";
+import Category from "./models/category.js";
+import Task from "./models/task.js";
 
 type SessionType = { userId: number | undefined };
 
 const convertProject = (x: Project) => {
   return { id: x.id, title: x.title, description: x.description };
+};
+
+const convertTask = (x: Task) => {
+  return { id: x.id, title: x.title, description: x.description };
+};
+
+const convertCategory = (x: Category) => {
+  return { id: x.id, title: x.title, tasks: x.tasks ? x.tasks.map(convertTask) : [] };
 };
 
 export default class RPCInterface {
@@ -55,6 +70,23 @@ export default class RPCInterface {
       object: "rpc",
       message: error,
     });
+  }
+
+  private async guardHserHasAccessToProject(userId: number, projectId: number) {
+    const has = await ProjectUser.findOne({ where: { userId, projectId } });
+    if (!has) throw new AccessDeniedError();
+  }
+
+  private async findById<M extends Model>(
+    model: {
+      findOne(options?: FindOptions<Attributes<M>>): Promise<M | null>;
+    },
+    id: number,
+    args?: FindOptions<any>,
+  ): Promise<M> {
+    const obj = await model.findOne({ where: { id }, ...(args ?? {}) });
+    if (!obj) throw new ModelNotFoundError();
+    return obj;
   }
 
   private async getUserById(
@@ -93,7 +125,7 @@ export default class RPCInterface {
             methodName: new method().name,
             req,
             id: source.id,
-            session: source.session
+            session: source.session,
           });
         }
         try {
@@ -102,8 +134,14 @@ export default class RPCInterface {
           console.error(error);
           if (error instanceof CatchValidationError)
             return Schema.errorCodes.validationError;
+          if (error instanceof AccessDeniedError)
+            return Schema.errorCodes.denied;
+
           if (error instanceof AuthorizationError)
             return Schema.errorCodes.authorizationError;
+          if (error instanceof ModelNotFoundError)
+            return Schema.errorCodes.notFound;
+
           if (
             error instanceof SequelizeValidationError ||
             error instanceof SequelizeError
@@ -161,6 +199,35 @@ export default class RPCInterface {
       });
 
       return convertProject(project);
+    });
+
+    onMethod(Schema.category.create, async (newCategoryForm, { session }) => {
+      validateNewCategoryForm(newCategoryForm);
+      const user = await this.getUserById(session.userId);
+      const project = await this.findById<Project>(
+        Project,
+        newCategoryForm.projectId,
+      );
+      if (project.ownerId != user.id) throw new AccessDeniedError();
+      const category = await Category.create({
+        projectId: project.id,
+        title: newCategoryForm.title,
+      });
+
+      return convertCategory(category);
+    });
+
+    onMethod(Schema.category.getList, async ({ projectId }, { session }) => {
+      const user = await this.getUserById(session.userId);
+      await this.guardHserHasAccessToProject(user.id, projectId);
+
+      const categories = await Category.findAll({
+        where: {
+          projectId: projectId
+        }
+      });
+
+      return categories.map(convertCategory);
     });
   }
 }

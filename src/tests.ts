@@ -16,7 +16,9 @@ const config: ServiceConfig = {
 async function serviceAndSocket() {
   const service = await Service.create(config);
   const socket = new Client({
-    socket: new WebSocketImpl(new WebSocket(`ws://127.0.0.1:${config.rpcOptions.port}`)),
+    socket: new WebSocketImpl(
+      new WebSocket(`ws://127.0.0.1:${config.rpcOptions.port}`),
+    ),
   });
   service.rpc.server.debugLoggerSend = (s) =>
     service.logger.debug({
@@ -63,6 +65,17 @@ async function userEnvironment() {
   return { service, socket };
 }
 
+async function projectEnvironment() {
+  const { service, socket } = await userEnvironment();
+  const projectName = "Test Project";
+  const project = await new Schema.projects.create({
+    title: projectName,
+    description: "Project for testing",
+  }).with(socket);
+  if (typeof project === "string") throw new Error(project);
+  return { service, socket, project };
+}
+
 describe("User interactions", () => {
   it("User register and get info", async () => {
     const { service, socket } = await serviceAndSocket();
@@ -105,6 +118,27 @@ describe("User interactions", () => {
 
       expect(rlist.projects[0].title).to.equal(projectName);
       expect(rlist.ownedProjects[0].title).to.equal(projectName);
+    } finally {
+      socket.close();
+      service.rpc.server.close();
+    }
+  });
+
+  it("Create category \"TEST\" and list it", async () => {
+    const { service, socket, project } = await projectEnvironment();
+    try {
+      const category = await new Schema.category.create({
+        projectId: project.id,
+        title: "Testing"
+      }).with(socket);
+      if (typeof category === "string") throw new Error(category);
+      expect(category.id).to.equal(1);
+
+      const categories = await new Schema.category.getList({
+        projectId: project.id,
+      }).with(socket);
+      if (typeof categories === "string") throw new Error(categories);
+      expect(categories[0].id).to.equal(category.id);
     } finally {
       socket.close();
       service.rpc.server.close();
