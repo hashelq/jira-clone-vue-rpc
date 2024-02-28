@@ -244,6 +244,14 @@ export default {
       }),
       Category,
     ),
+
+    delete: Method.new(
+      "category.delete",
+      t.type({
+        categoryId: t.number
+      }),
+      result(t.undefined),
+    ),
   },
 
   task: {

@@ -124,7 +124,7 @@ describe("User interactions", () => {
     }
   });
 
-  it('Category interactions', async () => {
+  it("Category interactions", async () => {
     const { service, socket, project } = await projectEnvironment();
     try {
       const category = ok(
@@ -135,12 +135,25 @@ describe("User interactions", () => {
       );
       expect(category.id).to.equal(1);
 
-      const categories = ok(
+      let categories = ok(
         await new Schema.category.getList({
           projectId: project.id,
         }).with(socket),
       );
       expect(categories[0].id).to.equal(category.id);
+
+      ok(
+        await new Schema.category.delete({
+          categoryId: category.id,
+        }).with(socket),
+      );
+
+      categories = ok(
+        await new Schema.category.getList({
+          projectId: project.id,
+        }).with(socket),
+      );
+      expect(categories.length).to.equal(0);
     } finally {
       socket.close();
       service.rpc.server.close();

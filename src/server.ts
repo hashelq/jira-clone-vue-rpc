@@ -128,7 +128,9 @@ export default class RPCInterface {
       },
       include: [
         { as: "category", model: Category },
-        ...(args && args.include && args.include instanceof Array ? args.include : []),
+        ...(args && args.include && args.include instanceof Array
+          ? args.include
+          : []),
       ],
     });
 
@@ -280,6 +282,10 @@ export default class RPCInterface {
           },
         })
       ).map(convertCategory);
+    });
+
+    onMethod(Schema.category.delete, async ({ categoryId }, { session }) => {
+      await (await this.getCategory(session.userId, categoryId)).destroy();
     });
 
     onMethod(Schema.task.getList, async ({ categoryId }, { session }) => {
