@@ -272,7 +272,7 @@ export default class RPCInterface {
 
     onMethod(Schema.category.getList, async ({ projectId }, { session }) => {
       await this.guardHserHasAccessToProject(
-        (await this.getUserById(session.userId)).id,
+        session.userId,
         projectId,
       );
 
@@ -294,7 +294,7 @@ export default class RPCInterface {
       return (
         (
           await this.getCategory(
-            (await this.getUserById(session.userId)).id,
+            session.userId,
             categoryId,
             { include: [{ as: "tasks", model: Task }] },
           )
@@ -308,7 +308,7 @@ export default class RPCInterface {
         await Task.create({
           categoryId: (
             await this.getCategory(
-              (await this.getUserById(session.userId)).id,
+              session.userId,
               newTaskForm.categoryId,
             )
           ).id,
