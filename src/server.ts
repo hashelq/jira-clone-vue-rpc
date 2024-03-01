@@ -201,6 +201,19 @@ export default class RPCInterface {
       server.onMethod(method, newfunc);
     }
 
+    function onMethodAuthorized<Req, Res>(
+      method: new () => Method<Req, Res | string>,
+      func: (
+        req: Req,
+        source: { id: number; socket: WebSocket; session: SessionType },
+      ) => Promise<Res>,
+    ) {
+      onMethod(method, async (req, source) => {
+        if (!source.session.userId) throw new AuthorizationError();
+        return await func(req, source);
+      });
+    }
+
     // USER
     onMethod(Schema.user.register, async (userform, { session }) => {
       validateUserForm(userform);
@@ -231,7 +244,7 @@ export default class RPCInterface {
       };
     });
 
-    onMethod(Schema.projects.delete, async ({ projectId }, { session }) => {
+    onMethodAuthorized(Schema.projects.delete, async ({ projectId }, { session }) => {
       const project = await this.findById<Project>(Project, projectId);
       if (project.ownerId != session.userId) throw new AccessDeniedError();
       await project.destroy();
@@ -270,11 +283,8 @@ export default class RPCInterface {
       );
     });
 
-    onMethod(Schema.category.getList, async ({ projectId }, { session }) => {
-      await this.guardHserHasAccessToProject(
-        session.userId,
-        projectId,
-      );
+    onMethodAuthorized(Schema.category.getList, async ({ projectId }, { session }) => {
+      await this.guardHserHasAccessToProject(session.userId, projectId);
 
       return (
         await Category.findAll({
@@ -285,32 +295,27 @@ export default class RPCInterface {
       ).map(convertCategory);
     });
 
-    onMethod(Schema.category.delete, async ({ categoryId }, { session }) => {
+    onMethodAuthorized(Schema.category.delete, async ({ categoryId }, { session }) => {
       await (await this.getCategory(session.userId, categoryId)).destroy();
     });
 
     // TASK
-    onMethod(Schema.task.getList, async ({ categoryId }, { session }) => {
+    onMethodAuthorized(Schema.task.getList, async ({ categoryId }, { session }) => {
       return (
         (
-          await this.getCategory(
-            session.userId,
-            categoryId,
-            { include: [{ as: "tasks", model: Task }] },
-          )
+          await this.getCategory(session.userId, categoryId, {
+            include: [{ as: "tasks", model: Task }],
+          })
         ).tasks ?? []
       ).map(convertTask);
     });
 
-    onMethod(Schema.task.create, async (newTaskForm, { session }) => {
+    onMethodAuthorized(Schema.task.create, async (newTaskForm, { session }) => {
       validateNewTaskForm(newTaskForm);
       return convertTask(
         await Task.create({
           categoryId: (
-            await this.getCategory(
-              session.userId,
-              newTaskForm.categoryId,
-            )
+            await this.getCategory(session.userId, newTaskForm.categoryId)
           ).id,
           title: newTaskForm.task.title,
           description: newTaskForm.task.description,
@@ -318,17 +323,17 @@ export default class RPCInterface {
       );
     });
 
-    onMethod(Schema.task.get, async ({ taskId }, { session }) => {
+    onMethodAuthorized(Schema.task.get, async ({ taskId }, { session }) => {
       return convertTask(
         await this.getTask(session.userId, taskId, { include: [User] }),
       );
     });
 
-    onMethod(Schema.task.delete, async ({ taskId }, { session }) => {
+    onMethodAuthorized(Schema.task.delete, async ({ taskId }, { session }) => {
       await (await this.getTask(session.userId, taskId)).destroy();
     });
 
-    onMethod(Schema.task.move, async ({ taskId, categoryId }, { session }) => {
+    onMethodAuthorized(Schema.task.move, async ({ taskId, categoryId }, { session }) => {
       const task = await this.getTask(session.userId, taskId);
 
       if (
@@ -341,7 +346,7 @@ export default class RPCInterface {
       await task.save();
     });
 
-    onMethod(Schema.task.edit, async (form, { session }) => {
+    onMethodAuthorized(Schema.task.edit, async (form, { session }) => {
       validateEditTaskForm(form);
       const transaction = await this.seq.transaction();
       const task = await this.getTask(session.userId, form.taskId, {
