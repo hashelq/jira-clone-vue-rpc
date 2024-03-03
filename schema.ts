@@ -200,6 +200,19 @@ export default {
       ),
     ),
 
+    login: Method.new(
+      "user.login",
+      t.type({
+        username: t.string,
+        password: t.string,
+      }),
+      result(
+        t.type({
+          token: t.string,
+        }),
+      ),
+    ),
+
     authorize: Method.new("user.authorize", t.string, result(t.undefined)),
 
     info: Method.new("user.infoGet", t.void, result(User)),

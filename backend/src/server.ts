@@ -225,6 +225,19 @@ export default class RPCInterface {
       return { token: user.token };
     });
 
+    onMethod(Schema.user.login, async (userform, { session }) => {
+      validateUserForm(userform);
+      const user = await User.findOne({
+        where: {
+          ...userform
+        }
+      });
+      user.token = crypto.randomBytes(32).toString("hex");
+      session.userId = user.id;
+      await user.save();
+      return { token: user.token };
+    });
+
     onMethod(Schema.user.info, async (_, { session }) => {
       const user = await this.getUserById(session.userId);
       return { id: user.id, username: user.username };
