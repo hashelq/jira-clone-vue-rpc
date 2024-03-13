@@ -13,7 +13,6 @@ import { Model, Sequelize } from "sequelize-typescript";
 import Schema, {
   AccessDeniedError,
   AuthorizationError,
-  CatchValidationError,
   ModelNotFoundError,
   WrongOperandsError,
   validateEditTaskForm,
@@ -28,33 +27,10 @@ import ProjectUser from "./models/projectuser.js";
 import Category from "./models/category.js";
 import Task from "./models/task.js";
 import TaskUser from "./models/taskuser.js";
+import { convertProject, convertTask, convertCategory } from "./convert.js";
+import { convertRPCErrorToCode } from "./utils.js";
 
 type SessionType = { userId: number | undefined };
-
-const convertUser = (x: User) => {
-  return { id: x.id, username: x.username };
-};
-
-const convertProject = (x: Project) => {
-  return { id: x.id, title: x.title, description: x.description };
-};
-
-const convertTask = (x: Task) => {
-  return {
-    id: x.id,
-    title: x.title,
-    description: x.description,
-    associatedUsers: (x.associatedUsers ?? []).map(convertUser),
-  };
-};
-
-const convertCategory = (x: Category) => {
-  return {
-    id: x.id,
-    title: x.title,
-    tasks: x.tasks ? x.tasks.map(convertTask) : [],
-  };
-};
 
 export default class RPCInterface {
   public port: number;
@@ -173,28 +149,9 @@ export default class RPCInterface {
         try {
           return await func(req, source);
         } catch (error) {
-          console.error(error);
-          if (error instanceof WrongOperandsError)
-            return Schema.errorCodes.wrongOperands;
-          if (error instanceof CatchValidationError)
-            return Schema.errorCodes.validationError;
-          if (error instanceof AccessDeniedError)
-            return Schema.errorCodes.denied;
-
-          if (error instanceof AuthorizationError)
-            return Schema.errorCodes.authorizationError;
-          if (error instanceof ModelNotFoundError)
-            return Schema.errorCodes.notFound;
-
-          if (
-            error instanceof SequelizeValidationError ||
-            error instanceof SequelizeError
-          ) {
-            this.logCritical(error.toString());
-            return Schema.errorCodes.internalError;
-          }
-
-          // FIXME: crashes in tests
+          const err = convertRPCErrorToCode(error);
+          if (err)
+            return err;
           throw error;
         }
       };
