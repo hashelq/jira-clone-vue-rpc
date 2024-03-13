@@ -3,6 +3,10 @@ import RPCInterface from "./server.js";
 import { Sequelize } from "sequelize";
 import { SequelizeOptions } from "sequelize-typescript";
 import createSequelize from "./seq.js";
+import routesCategory from "./routes/category.js";
+import routesProject from "./routes/project.js";
+import routesTask from "./routes/task.js";
+import routesUser from "./routes/user.js";
 
 export interface ServiceConfig {
   rpcOptions: {
@@ -64,6 +68,11 @@ export default class Service {
       logger,
       seq,
     );
+
+    rpci.implementRoutes(routesUser);
+    rpci.implementRoutes(routesProject);
+    rpci.implementRoutes(routesCategory);
+    rpci.implementRoutes(routesTask);
 
     return new Service(rpci, seq, logger);
   }

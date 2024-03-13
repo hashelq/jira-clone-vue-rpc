@@ -12,6 +12,7 @@ import Schema, {
 } from "./schema.js";
 
 export function convertRPCErrorToCode(error: any) {
+  console.error(error);
   if (error instanceof WrongOperandsError)
     return Schema.errorCodes.wrongOperands;
   if (error instanceof CatchValidationError)
